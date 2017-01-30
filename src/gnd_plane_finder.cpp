@@ -44,8 +44,28 @@ std::vector<int> fit_plane_to_cloud(const PointCloud::ConstPtr& point_cloud)
 {
     std::vector<int> plane_normal;
     
+    int number_of_points = point_cloud->size();
+    int reduced_point_count = 1000; // Decimate out all the points in the cloud except this many
     int max_iterations = 50; // I think this might be a good starting point
+    int decimation_index = number_of_points/reduced_point_count;
 
+    std::vector<float> XYZpoint;
+    std::vector< std::vector<float> > reduced_point_cloud;
+
+    for(int i = 0; i < number_of_points; i++)
+    {
+        if ((i % decimation_index) == 0)
+        {
+            std::cout << "Selecting the i'th index of the cloud:" << i << "." << std::endl;
+            XYZpoint.push_back(point_cloud->points[i].x);
+            XYZpoint.push_back(point_cloud->points[i].y);
+            XYZpoint.push_back(point_cloud->points[i].z);
+            reduced_point_cloud.push_back(XYZpoint);
+            // NOTE: also, want to consider cylinder uplift method (celling data then lowest Z is the ground plane)
+            // ALSO: Investigate PCl
+        }
+
+    }
     for(int i = 0; i < max_iterations; i++)
     {
 
@@ -68,10 +88,13 @@ void cloudCallback(const PointCloud::ConstPtr& cloud_holder)
         //cloud_holder->points[i].z
         // Output data to ~/output.csv data file for whatever purpose you may need
         *outputFile_ptr << cloud_holder->points[i].x << "," << cloud_holder->points[i].y << cloud_holder->points[i].z << std::endl;
-        std::vector<int> plane_normal;
-        plane_normal = fit_plane_to_cloud(cloud_holder);
-        std::cout << "PLANE NORMAL FOUND?" << std::endl;
+
     }
+
+    std::vector<int> plane_normal;
+    plane_normal = fit_plane_to_cloud(cloud_holder);
+    std::cout << "PLANE NORMAL FOUND?" << std::endl;
+
     outputFile_ptr->close();
     std::cout << "Done with a single cloud processing." << std::endl;
 }
